@@ -1,4 +1,5 @@
 github.com/aws/aws-sdk-go 34eb9e6629c9e23f3b602e7457def16ff10f4128
 github.com/docopt/docopt-go 854c423c810880e30b9fecdabb12d54f4a92f9bb
 github.com/miekg/dns 17a9b53ea9595c8f0969f81bfed017866fb3817d
+github.com/quipo/statsd 1c66a23d163c4d9aee3728263e8ec19fafbff336
 github.com/vaughan0/go-ini a98ad7ee00ec53921f08832bc06ecf7fd600e6a1
