@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/cloudfoundry/gosigar"
 	"github.com/docopt/docopt-go"
 	"github.com/miekg/dns"
 	"github.com/quipo/statsd"
@@ -13,12 +14,13 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
 )
 
-var version = "0.1.2015111500"
+var version = "0.1.2015111501"
 
 var usage = `neddns: simple authoratative DNS server backed by S3
 
@@ -87,6 +89,7 @@ func main() {
 		c.stats = statsd.NewStatsdClient(c.statsdServer, c.statsdPrefix)
 		c.stats.CreateSocket()
 		c.debug("Statsd enabled.")
+		go c.sendStats()
 	} else {
 		c.stats = statsd.NoopClient{}
 	}
@@ -315,6 +318,25 @@ func (c *config) startServer() {
 			log.Fatalf("Failed to set tcp listener %s\n", err.Error())
 		}
 	}()
+}
+
+func (c *config) sendStats() {
+	mem := sigar.Mem{}
+	load := sigar.LoadAverage{}
+	for {
+		mem.Get()
+		load.Get()
+		c.stats.Gauge("numgoroutine", int64(runtime.NumGoroutine()))
+		c.stats.Gauge("memfree", int64(mem.Free))
+		c.stats.Gauge("memused", int64(mem.Used))
+		c.stats.Gauge("memactualfree", int64(mem.ActualFree))
+		c.stats.Gauge("memactualused", int64(mem.ActualUsed))
+		c.stats.Gauge("memtotal", int64(mem.Total))
+		c.stats.FGauge("loadone", float64(load.One))
+		c.stats.FGauge("loadfive", float64(load.Five))
+		c.stats.FGauge("loadfifteen", float64(load.Fifteen))
+		time.Sleep(10 * time.Second)
+	}
 }
 
 func parseArgs() (config, error) {
